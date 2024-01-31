@@ -1,0 +1,1 @@
+this text file makes sure the output folder always contains a file so it can be staged with the VCS
