@@ -1,6 +1,7 @@
 import polars as pl
 import requests
 
+
 class EspnConnector:
     def __init__(self, env_config: dict):
         self.api_url = env_config['ESPN_API_URL']
@@ -19,18 +20,19 @@ class EspnConnector:
         # slice last comma and space off the positions list when returning the value
         return positions[:-2]
 
-    def get_espn_data(self, view: str) -> object:
+    def get_espn_data(self, url, view: str, headers: dict = None) -> object:
         """
         calls the espn API with our stored credentials and returns different data based upon the view we ask the API for
         """
-        response = requests.get(self.api_url, cookies={'swid': self.swid, 'espn_s2': self.espn_s2}, params={'view': view})
+        response = requests.get(url, cookies={'swid': self.swid, 'espn_s2': self.espn_s2}, params={'view': view},
+                                headers=headers)
         return response.json()
 
     def build_fantasy_rosters(self) -> pl.DataFrame:
         """
         Builds a data frame of all rostered fantasy players and also calculates their keeper value for the next season
         """
-        rosters_json: object = self.get_espn_data('mRoster')
+        rosters_json: object = self.get_espn_data(self.api_url, 'mRoster')
         fantasy_rosters: pl.DataFrame = pl.DataFrame()
         # loop over every team and every player to extract the key information in the json file
         for team in rosters_json['teams']:
@@ -57,7 +59,7 @@ class EspnConnector:
         """
         Builds a data frame of team owners
         """
-        owners_json: object = self.get_espn_data('mTeam')
+        owners_json: object = self.get_espn_data(self.api_url, 'mTeam')
         owners_df: pl.DataFrame = pl.DataFrame()
         for owner in owners_json['members']:
             owner_row: pl.DataFrame = pl.DataFrame(
@@ -78,3 +80,27 @@ class EspnConnector:
 
         owners_teams = team_df.join(owners_df, how='left', on='owner_id').drop('owner_id')
         return owners_teams
+
+    def build_draft_results(self, year: str) -> pl.DataFrame:
+        draft_api_url: str = self.api_url.replace('2024', year)
+        draft_json: dict = self.get_espn_data(draft_api_url, 'mDraftDetail')
+        picks: list = draft_json['draftDetail']['picks']
+        picks_df: pl.DataFrame = pl.DataFrame(picks)
+        return picks_df.select(
+            ['playerId', 'keeper', 'bidAmount', 'teamId', 'overallPickNumber', 'roundId', 'roundPickNumber',
+             'nominatingTeamId'])
+
+    def build_player_list(self, year: str) -> pl.DataFrame:
+        draft_api_url: str = 'https://fantasy.espn.com/apis/v3/games/flb/seasons/2023/players?scoringPeriodId=0&view=players_wl'
+        # headers: str = {'x-fantasy-filter': '{"filterActive": null}',
+        #                 'x-fantasy-platform': 'kona-PROD-1dc40132dc2070ef47881dc95b633e62cebc9913',
+        #                 'x-fantasy-source': 'kona'
+        #                 }
+        headers = {
+            'x - fantasy - filter': '{“filterActive”:null}',
+            'x - fantasy - platform': 'kona - PROD - 1dc40132dc2070ef47881dc95b633e62cebc9913',
+            'x - fantasy - source': 'kona'
+        }
+        response = requests.get(draft_api_url, cookies={'swid': self.swid, 'espn_s2': self.espn_s2}, headers=headers)
+
+        print(response.json())
