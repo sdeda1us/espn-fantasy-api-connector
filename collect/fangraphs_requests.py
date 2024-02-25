@@ -12,6 +12,17 @@ fangraphs_request: dict = {
         'cols_to_keep': ['PlayerName', 'playerid', 'POS', 'mRBI', 'mR', 'mSB', 'mHR', 'mOBP', 'PTS', 'aPOS', 'Dollars'],
         'cols_to_rename': {'playerid': 'fg_playerid'}
     },
+    'steamer_pitcher_stats': {
+        'url': 'https://www.fangraphs.com/api/projections?pos=all&stats=pit&type=steamer',
+        'cols_to_keep': ['PlayerName', 'playerid', 'GS', 'IP', 'SV', 'HLD', 'ERA', 'WHIP', 'QS', 'ER', 'BB', 'SO', 'K/9'],
+        'cols_to_rename': {'playerid': 'fg_playerid'}
+    },
+    'steamer_hitter_stats': {
+        'url': 'https://www.fangraphs.com/api/projections?pos=all&stats=bat&type=steamer',
+        'cols_to_keep': ['PlayerName', 'playerid', 'G', 'PA', 'H', 'BB', 'HR', 'R', 'RBI', 'SB', 'SO',
+                         'CS', 'OBP', 'SLG', 'OPS', 'ISO', 'BABIP'],
+        'cols_to_rename': {'playerid': 'fg_playerid'}
+    },
     'batting_twenty_three': {
         'url': 'https://www.fangraphs.com/api/leaders/major-league/data?age=&pos=all&stats=bat&lg=all&qual=200&season=2023&season1=2023&startdate=2023-03-01&enddate=2023-11-01&month=0&hand=&team=0&pageitems=170&pagenum=1&ind=0&rost=0&players=&type=15&postseason=&sortdir=default&sortstat=pfxPace',
         'cols_to_keep': ['PlayerName', 'playerid', 'Bats', 'Age', 'G', 'PA', 'H', 'BB', 'HR', 'R', 'RBI', 'SB', 'SO',
@@ -76,6 +87,30 @@ addition_historical_data: list = [
     {
         'new_key': 'batx_pitcher',
         'reference_key': 'steamer_pitcher',
+        'old_string': 'steamer',
+        'new_string': 'thebatx'
+    },
+    {
+        'new_key': 'atc_pitcher_stats',
+        'reference_key': 'steamer_pitcher_stats',
+        'old_string': 'steamer',
+        'new_string': 'atc'
+    },
+    {
+        'new_key': 'batx_pitcher_stats',
+        'reference_key': 'steamer_pitcher_stats',
+        'old_string': 'steamer',
+        'new_string': 'thebatx'
+    },
+    {
+        'new_key': 'atc_hitter_stats',
+        'reference_key': 'steamer_hitter_stats',
+        'old_string': 'steamer',
+        'new_string': 'atc'
+    },
+    {
+        'new_key': 'batx_hitter_stats',
+        'reference_key': 'steamer_hitter_stats',
         'old_string': 'steamer',
         'new_string': 'thebatx'
     }

@@ -1,6 +1,6 @@
 from dotenv import dotenv_values
 from collect.espn_connector import EspnConnector
-from collect.fangraphs_connector import return_fg_df
+from collect.fangraphs_connector import return_fg_df, get_fangraphs_data, get_projected_stats_from_fg
 import polars as pl
 from collect.fangraphs_requests import fangraphs_request
 import re
@@ -61,8 +61,9 @@ pitcher_history_rosters: pl.DataFrame = prior_three_years_pitcher.join(rosters_o
 hitter_history_rosters: pl.DataFrame = prior_three_years_hitter.join(rosters_owners, how='left', left_on='PlayerName',
                                                                      right_on='player_full')
 
+
 # --- Auction Dollar Projections --- #
-def return_merged_table(table_list: list):
+def return_merged_auction_table(table_list: list):
     projection_table: pl.DataFrame = pl.DataFrame()
     for projection in table_list:
         suffix = '_' + re.match(r'([a-zA-Z]+)_', projection).group(1)
@@ -71,14 +72,35 @@ def return_merged_table(table_list: list):
             projection_table = new_projection
         else:
             projection_table = projection_table.join(new_projection, how='left', on=['fg_playerid'],
-                                                                   suffix=suffix)
+                                                     suffix=suffix)
     return projection_table
+
 
 hitter_projections: list = ['steamer_hitter', 'atc_hitter', 'batx_hitter']
 pitcher_projections: list = ['steamer_pitcher', 'atc_pitcher', 'batx_pitcher']
 
-hitter_projection_table = return_merged_table(hitter_projections)
-pitcher_projection_table = return_merged_table(pitcher_projections)
+hitter_projection_table = return_merged_auction_table(hitter_projections)
+pitcher_projection_table = return_merged_auction_table(pitcher_projections)
 
-print(hitter_projection_table.head())
-print(pitcher_projection_table.head())
+hitter_stats_projections: list = ['steamer_hitter_stats', 'atc_hitter_stats', 'batx_hitter_stats']
+pitcher_stats_projections: list = ['steamer_pitcher_stats', 'atc_pitcher_stats']
+
+
+def return_merged_stat_projections(table_list):
+    projection_table: pl.DataFrame = pl.DataFrame()
+    for projection in table_list:
+        suffix = '_' + re.match(r'([a-zA-Z]+)_', projection).group(1)
+        new_projection: pl.DataFrame = get_projected_stats_from_fg(fangraphs_request[projection])
+        if projection_table.is_empty():
+            projection_table = new_projection
+        else:
+            projection_table = projection_table.join(new_projection, how='left', on=['fg_playerid'],
+                                                     suffix=suffix)
+    return projection_table
+
+
+hitter_stats_projection_table = return_merged_stat_projections(hitter_stats_projections)
+pitcher_stats_projection_table = return_merged_stat_projections(pitcher_stats_projections)
+
+print(hitter_stats_projection_table.head())
+print(pitcher_stats_projection_table.head())
